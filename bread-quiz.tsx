@@ -60,12 +60,12 @@ const TipCard = memo(({ tip, renderIcon }) => (
 
 // Adicionar estilos de animação
 const animations = {
-  "@keyframes pulse": {
-    "0%": { transform: "scale(1)" },
-    "50%": { transform: "scale(1.05)" },
-    "100%": { transform: "scale(1)" },
-  },
-  animation: "pulse 2s infinite",
+  // "@keyframes pulse": {
+  //   "0%": { transform: "scale(1)" },
+  //   "50%": { transform: "scale(1.05)" },
+  //   "100%": { transform: "scale(1)" },
+  // },
+  // animation: "pulse 2s infinite",
   "@keyframes fadeIn": {
     "0%": { opacity: 0, transform: "translateY(-20px)" },
     "100%": { opacity: 1, transform: "translateY(0)" },
@@ -152,6 +152,80 @@ export default function BreadQuiz() {
   const completionAudioRef = useRef(null)
   const clickSoundRef = useRef(null)
   const backgroundMusicRef = useRef(null)
+
+  // Adicionar música de fundo
+  useEffect(() => {
+    // Verificar se já existe uma instância de áudio para evitar duplicação
+    if (backgroundMusicRef.current) {
+      return;
+    }
+    
+    // Criar elemento de áudio para a música de fundo
+    const backgroundMusic = new Audio(
+      "https://infosaber.online/Happy%20Jazz%20Bossa%20Nova%20Music%20Happy%20Cafe%20Music%20For%20Work%20Study.mp3",
+    )
+    backgroundMusic.loop = true
+    backgroundMusic.volume = 0.5 // 50% do volume
+    backgroundMusicRef.current = backgroundMusic
+
+    // Reproduzir a música quando o usuário interagir com a página pela primeira vez
+    const playMusic = () => {
+      if (backgroundMusicRef.current && backgroundMusicRef.current.paused) {
+        backgroundMusicRef.current.play().catch((err) => {
+          console.log("Erro ao reproduzir música de fundo:", err)
+        })
+        // Remover os event listeners após a primeira interação
+        document.removeEventListener("click", playMusic)
+        document.removeEventListener("keydown", playMusic)
+      }
+    }
+
+    document.addEventListener("click", playMusic)
+    document.addEventListener("keydown", playMusic)
+
+    return () => {
+      // Limpar event listeners e pausar a música quando o componente for desmontado
+      document.removeEventListener("click", playMusic)
+      document.removeEventListener("keydown", playMusic)
+      if (backgroundMusicRef.current) {
+        backgroundMusicRef.current.pause()
+        backgroundMusicRef.current.src = ""
+        backgroundMusicRef.current = null
+      }
+    }
+  }, [])
+
+  // Add this useEffect to prevent body scrolling when modals are open
+  useEffect(() => {
+    // Check if any modal is open
+    const isAnyModalOpen = showInstructions || showLevelUpModal || showCompletionModal || showPurchaseModal
+
+    // Prevent body scrolling when modals are open
+    if (isAnyModalOpen) {
+      document.body.style.overflow = "hidden"
+      document.body.style.position = "fixed"
+      document.body.style.width = "100%"
+      document.body.style.top = `-${window.scrollY}px`
+    } else {
+      // Restore scrolling when modals are closed
+      const scrollY = document.body.style.top
+      document.body.style.overflow = ""
+      document.body.style.position = ""
+      document.body.style.width = ""
+      document.body.style.top = ""
+      if (scrollY) {
+        window.scrollTo(0, Number.parseInt(scrollY || "0", 10) * -1)
+      }
+    }
+
+    return () => {
+      // Cleanup function to restore scrolling when component unmounts
+      document.body.style.overflow = ""
+      document.body.style.position = ""
+      document.body.style.width = ""
+      document.body.style.top = ""
+    }
+  }, [showInstructions, showLevelUpModal, showCompletionModal, showPurchaseModal])
 
   const levels = [
     { level: 1, name: "Aprendiz de Padeiro", xp: 0 },
@@ -920,27 +994,12 @@ export default function BreadQuiz() {
 
   // Iniciar a música de fundo quando o componente for montado
   useEffect(() => {
-    if (backgroundMusicRef.current) {
-      backgroundMusicRef.current.volume = 0.35 // 35% do volume
-
-      // Reproduzir a música quando o usuário interagir com a página pela primeira vez
-      const playMusic = () => {
-        backgroundMusicRef.current.play().catch((err) => {
-          console.log("Erro ao reproduzir música de fundo:", err)
-        })
-        // Remover os event listeners após a primeira interação
-        document.removeEventListener("click", playMusic)
-        document.removeEventListener("keydown", playMusic)
-      }
-
-      document.addEventListener("click", playMusic)
-      document.addEventListener("keydown", playMusic)
-
-      return () => {
-        // Limpar event listeners e pausar a música quando o componente for desmontado
-        document.removeEventListener("click", playMusic)
-        document.removeEventListener("keydown", playMusic)
+    // Removido o código duplicado, pois já está sendo tratado no useEffect acima
+    return () => {
+      // Garantir que a música seja pausada quando o componente for desmontado
+      if (backgroundMusicRef.current) {
         backgroundMusicRef.current.pause()
+        backgroundMusicRef.current = null
       }
     }
   }, [])
@@ -1023,7 +1082,7 @@ export default function BreadQuiz() {
                   </div>
 
                   <Button
-                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-4 sm:py-6 text-base sm:text-xl font-bold rounded-lg shadow-lg flex items-center justify-center"
+                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-4 sm:py-6 md:py-8 text-base sm:text-lg md:text-xl font-extrabold rounded-lg shadow-lg flex items-center justify-center"
                     onClick={() => {
                       setShowStartScreen(false)
                       setShowInstructions(true)
@@ -1031,7 +1090,7 @@ export default function BreadQuiz() {
                     style={animations}
                   >
                     <PlayCircle className="h-5 w-5 sm:h-6 sm:w-6 mr-2 flex-shrink-0" />
-                    <span className="whitespace-normal text-center">INICIAR O JOGO AGORA!</span>
+                    <span className="whitespace-normal text-center">INICIAR O JOGO</span>
                   </Button>
 
                   <div className="mt-4 text-center text-sm text-gray-600">
@@ -1090,7 +1149,7 @@ export default function BreadQuiz() {
             transition={{ duration: 0.3 }}
           >
             <motion.div
-              className="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl border-2 border-amber-300"
+              className="bg-white rounded-xl max-w-[95%] w-full sm:max-w-md p-4 shadow-2xl border-2 border-amber-300"
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{
@@ -1100,14 +1159,9 @@ export default function BreadQuiz() {
               }}
               onAnimationStart={() => popupAudioRef.current?.play()}
             >
-              <motion.div
-                className="text-center mb-6"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-              >
+              <div className="bg-gradient-to-r from-amber-400 to-amber-600 -m-4 mb-5 p-5 text-white text-center">
                 <motion.div
-                  className="bg-amber-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4"
+                  className="bg-amber-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3"
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{
@@ -1117,73 +1171,47 @@ export default function BreadQuiz() {
                     delay: 0.3,
                   }}
                 >
-                  <Sparkles className="h-12 w-12 text-amber-500" />
+                  <Sparkles className="h-8 w-8 text-amber-500" />
                 </motion.div>
                 <motion.h2
-                  className="text-2xl font-bold text-amber-800 mb-2"
+                  className="text-2xl font-bold mb-1"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3, delay: 0.4 }}
                 >
                   Acerte as perguntas e desbloqueie Receitas Exclusivas!
                 </motion.h2>
-                <motion.p
-                  className="text-gray-600"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3, delay: 0.5 }}
-                >
-                  Vamos começar nossa jornada para se tornar um mestre padeiro!
-                </motion.p>
-              </motion.div>
+              </div>
 
-              <div className="space-y-4 mb-6">
-                {[1, 2, 3].map((step, index) => (
-                  <motion.div
-                    key={`step-${step}`}
-                    className="flex items-start gap-3 bg-amber-50 p-3 rounded-lg border border-amber-100"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{
-                      duration: 0.4,
-                      delay: 0.5 + index * 0.15,
-                      ease: "easeOut",
-                    }}
-                  >
-                    <div className="bg-amber-100 rounded-full w-8 h-8 flex items-center justify-center text-amber-700 font-bold flex-shrink-0">
-                      {step}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-800">
-                        {step === 1
-                          ? "Leia cada pergunta com atenção"
-                          : step === 2
-                            ? "Escolha a resposta correta"
-                            : "Desbloqueie receitas exclusivas"}
-                      </h4>
-                      <p className="text-gray-600">
-                        {step === 1
-                          ? "Cada pergunta testa seu conhecimento sobre técnicas de panificação."
-                          : step === 2
-                            ? 'Selecione uma das opções e clique em "Verificar Resposta".'
-                            : "A cada resposta correta, você ganha XP e desbloqueia novas receitas!"}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="space-y-3 mb-5">
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-center">
+                  <p className="text-amber-800 font-medium">
+                    Responda corretamente e ganhe receitas, dicas e técnicas profissionais!
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 bg-green-50 p-3 rounded-lg border border-green-200">
+                  <div className="bg-green-100 rounded-full p-2 flex-shrink-0">
+                    <Trophy className="h-5 w-5 text-green-600" />
+                  </div>
+                  <p className="text-green-800">
+                    <span className="font-bold">Ganhe XP</span> e suba de nível para desbloquear mais conteúdo!
+                  </p>
+                </div>
               </div>
 
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 1 }}
+                transition={{ duration: 0.4, delay: 0.6 }}
+                className="mt-4"
               >
                 <Button
-                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-4 text-lg font-bold"
+                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-5 text-xl font-bold rounded-lg shadow-lg"
                   onClick={() => setShowInstructions(false)}
-                  style={animations}
                 >
-                  Entendi, vamos começar!
+                  <PlayCircle className="h-6 w-6 mr-2" />
+                  COMEÇAR AGORA!
                 </Button>
               </motion.div>
             </motion.div>
@@ -1194,53 +1222,47 @@ export default function BreadQuiz() {
         {/* Removido o timer da parte superior */}
 
         {/* Barra de XP e progresso mais atrativa */}
-        <Card className="mb-6 overflow-hidden border border-amber-200 shadow-md">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="bg-amber-500 text-white p-1.5 rounded-full">
-                  <Star className="h-5 w-5" />
-                </div>
-                <span className="font-bold text-amber-800">
-                  Nível {currentLevel}: {levels[currentLevel - 1].name}
-                </span>
-              </div>
-              <div className="text-sm font-medium text-amber-700">
-                {xp} XP / {getXPToNextLevel()} XP para o próximo nível
-              </div>
-            </div>
-            <div className="relative pt-1">
-              <div className="flex mb-2 items-center justify-between">
-                <div>
-                  <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-amber-600 bg-amber-100">
-                    Progresso
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-semibold inline-block text-amber-600">
-                    {getCurrentLevelProgress()}%
-                  </span>
-                </div>
-              </div>
-              <div className="overflow-hidden h-2 mb-1 text-xs flex rounded bg-amber-100">
-                <div
-                  style={{ width: `${getCurrentLevelProgress()}%` }}
-                  className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-amber-400 to-amber-600"
-                ></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="bg-amber-50 border border-amber-200 p-3 rounded-md text-center mb-6 shadow-md">
-          <div className="flex items-center justify-center gap-2 font-medium text-amber-800">
-            <Trophy className="h-5 w-5 text-amber-600" />
-            <span>
-              Respostas corretas: {correctAnswers} de {questions.length}
-            </span>
-          </div>
-          <p className="text-sm mt-1">Responda corretamente para desbloquear receitas exclusivas!</p>
+        <Card className="mb-4 overflow-hidden border border-amber-200 shadow-md">
+  <CardContent className="p-2 sm:p-3">
+    <div className="flex flex-wrap items-center justify-between gap-1">
+      <div className="flex items-center gap-1 sm:gap-2">
+        <div className="bg-amber-500 text-white p-1 rounded-full">
+          <Star className="h-3 w-3 sm:h-4 sm:w-4" />
         </div>
+        <span className="text-xs sm:text-sm font-bold text-amber-800">
+          Nível {currentLevel}: <span className="hidden xs:inline">{levels[currentLevel - 1].name}</span>
+        </span>
+      </div>
+      <div className="text-xs font-medium text-amber-700">
+        {xp} / {getXPToNextLevel()} XP
+      </div>
+    </div>
+    <div className="relative pt-1 mt-1">
+      <div className="flex mb-1 items-center justify-between">
+        <div>
+          <span className="text-[10px] sm:text-xs font-semibold inline-block py-0.5 px-1 sm:py-1 sm:px-2 uppercase rounded-full text-amber-600 bg-amber-100">
+            Progresso: {getCurrentLevelProgress()}%
+          </span>
+        </div>
+      </div>
+      <div className="overflow-hidden h-1.5 sm:h-2 mb-0 text-xs flex rounded bg-amber-100">
+        <div
+          style={{ width: `${getCurrentLevelProgress()}%` }}
+          className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-amber-400 to-amber-600"
+        ></div>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<div className="bg-amber-50 border border-amber-200 p-2 rounded-md text-center mb-4 shadow-md">
+  <div className="flex items-center justify-center gap-1 font-medium text-amber-800 text-xs sm:text-sm">
+    <Trophy className="h-3 w-3 sm:h-4 sm:w-4 text-amber-600" />
+    <span>
+      Respostas corretas: {correctAnswers} de {questions.length}
+    </span>
+  </div>
+</div>
 
         <Tabs defaultValue="quiz" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-3 mb-6">
@@ -1355,7 +1377,14 @@ export default function BreadQuiz() {
                           Nova Receita Desbloqueada!
                         </h4>
                         <p className="text-amber-800">
-                          Você desbloqueou: {recipeCollections.find((r) => r.requiredCorrect === correctAnswers)?.title}
+                          Você desbloqueou:{" "}
+                          {recipeCollections.find((r) => r.requiredCorrect === correctAnswers)?.title ||
+                            recipeCollections.find(
+                              (r) =>
+                                unlockedRecipes.includes(r.id) &&
+                                !unlockedRecipes.slice(0, unlockedRecipes.length - 1).includes(r.id),
+                            )?.title ||
+                            "Receita Especial"}
                         </p>
                         <Button
                           variant="outline"
@@ -1610,72 +1639,284 @@ export default function BreadQuiz() {
           </TabsContent>
         </Tabs>
 
-        {showLevelUpModal && (
+        {/* Espaço adicional no final da página para melhor experiência de rolagem no mobile */}
+        <div className="py-20 md:py-24"></div>
+      </div>
+
+      {showLevelUpModal && (
+        <motion.div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
           <motion.div
-            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            className="max-w-[95%] w-full sm:max-w-lg md:max-w-xl overflow-y-auto max-h-[85vh]"
+            initial={{ scale: 0.9, y: 20, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 20,
+              delay: 0.1,
+            }}
+            onAnimationStart={() => levelUpAudioRef.current?.play()}
           >
-            <motion.div
-              className="max-w-xl w-full overflow-y-auto max-h-[90vh]"
-              initial={{ scale: 0.9, y: 20, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 20,
-                delay: 0.1,
-              }}
-              onAnimationStart={() => levelUpAudioRef.current?.play()}
-            >
-              <Card className="border-0 overflow-hidden shadow-2xl">
+            <Card className="border-0 overflow-hidden shadow-2xl">
+              <motion.div
+                className="bg-gradient-to-r from-amber-400 to-amber-600 text-white p-5 relative overflow-hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+              >
                 <motion.div
-                  className="bg-gradient-to-r from-amber-400 to-amber-600 text-white p-5 relative overflow-hidden"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4, delay: 0.2 }}
+                  className="absolute -top-10 -right-10 w-40 h-40 bg-amber-300 rounded-full opacity-20"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.2, 0.3, 0.2],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Number.POSITIVE_INFINITY,
+                    repeatType: "reverse",
+                  }}
+                />
+                <motion.div
+                  className="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-300 rounded-full opacity-20"
+                  animate={{
+                    scale: [1, 1.1, 1],
+                    opacity: [0.2, 0.25, 0.2],
+                  }}
+                  transition={{
+                    duration: 2.5,
+                    repeat: Number.POSITIVE_INFINITY,
+                    repeatType: "reverse",
+                    delay: 0.5,
+                  }}
+                />
+                <motion.div
+                  initial={{ y: -20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
                 >
+                  <CardTitle className="text-3xl text-center">Parabéns! 🎉</CardTitle>
+                  <CardDescription className="text-center text-white/90 text-lg mt-1">
+                    Você alcançou o nível {newLevel}!
+                  </CardDescription>
+                </motion.div>
+                <motion.div
+                  className="mt-3 bg-amber-500/30 p-3 rounded-lg border border-white/20 text-center"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 15,
+                    delay: 0.5,
+                  }}
+                >
+                  <span className="font-bold text-xl">{levels[newLevel - 1].name}</span>
+                </motion.div>
+              </motion.div>
+
+              <CardContent className="space-y-4 p-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.6 }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-amber-500 text-white p-1.5 rounded-full">
+                        <Star className="h-5 w-5" />
+                      </div>
+                      <span className="font-bold text-amber-800">
+                        Nível {newLevel}: {levels[newLevel - 1].name}
+                      </span>
+                    </div>
+                    <div className="text-sm font-medium text-amber-700">{xp} XP acumulados</div>
+                  </div>
+
+                  <div className="relative pt-1">
+                    <motion.div
+                      className="overflow-hidden h-2 mb-1 text-xs flex rounded bg-amber-100"
+                      initial={{ width: 0 }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: 0.5, delay: 0.7 }}
+                    >
+                      <motion.div
+                        style={{ width: `${getCurrentLevelProgress()}%` }}
+                        className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-amber-400 to-amber-600"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${getCurrentLevelProgress()}%` }}
+                        transition={{ duration: 1, delay: 0.8 }}
+                      />
+                    </motion.div>
+                  </div>
+                </motion.div>
+
+                {unlockedRecipes.length > 0 && (
                   <motion.div
-                    className="absolute -top-10 -right-10 w-40 h-40 bg-amber-300 rounded-full opacity-20"
-                    animate={{
-                      scale: [1, 1.2, 1],
-                      opacity: [0.2, 0.3, 0.2],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Number.POSITIVE_INFINITY,
-                      repeatType: "reverse",
-                    }}
-                  />
-                  <motion.div
-                    className="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-300 rounded-full opacity-20"
-                    animate={{
-                      scale: [1, 1.1, 1],
-                      opacity: [0.2, 0.25, 0.2],
-                    }}
-                    transition={{
-                      duration: 2.5,
-                      repeat: Number.POSITIVE_INFINITY,
-                      repeatType: "reverse",
-                      delay: 0.5,
-                    }}
-                  />
-                  <motion.div
-                    initial={{ y: -20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="mt-6"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.9 }}
                   >
-                    <CardTitle className="text-3xl text-center">Parabéns! 🎉</CardTitle>
-                    <CardDescription className="text-center text-white/90 text-lg mt-1">
-                      Você alcançou o nível {newLevel}!
-                    </CardDescription>
+                    <h3 className="font-bold text-amber-800 flex items-center gap-2 mb-3">
+                      <Trophy className="h-5 w-5 text-amber-600" />
+                      Receitas Desbloqueadas ({unlockedRecipes.length})
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-2 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                      {recipeCollections
+                        .filter((r) => r.id !== 1 && unlockedRecipes.includes(r.id))
+                        .map((recipe, index) => (
+                          <motion.div
+                            key={index}
+                            className="flex items-center justify-between bg-white p-2 rounded border border-amber-100"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: 1 + index * 0.1 }}
+                          >
+                            <span className="flex items-center">
+                              {renderIcon(recipe.icon)}
+                              <span className="ml-2 text-sm">{recipe.title}</span>
+                            </span>
+                            <Badge className="bg-green-100 text-green-800 text-xs">Desbloqueado</Badge>
+                          </motion.div>
+                        ))}
+                    </div>
                   </motion.div>
+                )}
+
+                {getUnlockedBonuses().length > 0 && (
                   <motion.div
-                    className="mt-3 bg-amber-500/30 p-3 rounded-lg border border-white/20 text-center"
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
+                    className="mt-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 1.1 }}
+                  >
+                    <h3 className="font-bold text-amber-800 flex items-center gap-2 mb-3">
+                      <Gift className="h-5 w-5 text-amber-600" />
+                      Dicas Desbloqueadas ({getUnlockedBonuses().length})
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-2 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                      {getUnlockedBonuses().map((bonus, index) => (
+                        <motion.div
+                          key={index}
+                          className="flex items-center justify-between bg-white p-2 rounded border border-amber-100"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: 1.2 + index * 0.1 }}
+                        >
+                          <span className="flex items-center">
+                            {renderIcon(bonus.icon)}
+                            <span className="ml-2 text-sm">{bonus.title}</span>
+                          </span>
+                          <Badge className="bg-green-100 text-green-800 text-xs">Desbloqueado</Badge>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                <motion.div
+                  className="bg-green-50 p-4 rounded-lg border border-green-200 mt-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1.3 }}
+                >
+                  <h3 className="font-bold text-green-800 text-center mb-2">Continue jogando para desbloquear mais!</h3>
+                  <p className="text-sm text-green-700 text-center mb-3">
+                    Responda mais perguntas corretamente para subir de nível e desbloquear mais receitas e dicas
+                    exclusivas.
+                  </p>
+                  <div className="flex justify-center">
+                    <Badge className="bg-amber-100 text-amber-800 py-1">
+                      Próximo nível: {newLevel < levels.length ? levels[newLevel].name : "Nível Máximo"}
+                    </Badge>
+                  </div>
+                </motion.div>
+              </CardContent>
+
+              <CardFooter className="flex gap-2 p-6 bg-gray-50 border-t">
+                <motion.div
+                  className="w-full"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1.4 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    onClick={() => setShowLevelUpModal(false)}
+                    className="w-full bg-green-600 hover:bg-green-700 text-lg py-6"
+                  >
+                    Desbloquear Mais
+                  </Button>
+                </motion.div>
+              </CardFooter>
+            </Card>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {showCompletionModal && (
+        <motion.div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <motion.div
+            className="max-w-[95%] w-full sm:max-w-lg md:max-w-2xl overflow-y-auto max-h-[85vh]"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 20,
+              delay: 0.1,
+            }}
+            onAnimationStart={() => popupAudioRef.current?.play()}
+          >
+            <Card className="border-0 overflow-hidden shadow-2xl">
+              <motion.div
+                className="bg-gradient-to-r from-amber-400 to-amber-600 text-white p-5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+              >
+                <motion.div
+                  initial={{ y: -20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  <CardTitle className="text-3xl text-center">Parabéns, {levels[currentLevel - 1].name}! 🎉</CardTitle>
+                  <CardDescription className="text-center text-white/90 text-lg mt-1">
+                    Você completou o jogo com {xp} XP e desbloqueou {unlockedRecipes.length} receitas!
+                  </CardDescription>
+                </motion.div>
+              </motion.div>
+
+              <CardContent className="space-y-4 p-6">
+                <motion.div
+                  className="bg-amber-50 p-4 rounded-lg border-2 border-amber-300"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 }}
+                >
+                  <h3 className="font-bold text-amber-800 flex items-center gap-2 text-lg">
+                    <Trophy className="h-6 w-6 text-amber-600" />
+                    Receitas Desbloqueadas: {unlockedRecipes.length}
+                  </h3>
+
+                  <motion.div
+                    className="mt-4 mb-4 bg-green-100 p-4 rounded-lg border-2 border-green-500 shadow-md"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     transition={{
                       type: "spring",
                       stiffness: 400,
@@ -1683,222 +1924,10 @@ export default function BreadQuiz() {
                       delay: 0.5,
                     }}
                   >
-                    <span className="font-bold text-xl">{levels[newLevel - 1].name}</span>
-                  </motion.div>
-                </motion.div>
-
-                <CardContent className="space-y-4 p-6">
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.6 }}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="bg-amber-500 text-white p-1.5 rounded-full">
-                          <Star className="h-5 w-5" />
-                        </div>
-                        <span className="font-bold text-amber-800">
-                          Nível {newLevel}: {levels[newLevel - 1].name}
-                        </span>
-                      </div>
-                      <div className="text-sm font-medium text-amber-700">{xp} XP acumulados</div>
-                    </div>
-
-                    <div className="relative pt-1">
-                      <motion.div
-                        className="overflow-hidden h-2 mb-1 text-xs flex rounded bg-amber-100"
-                        initial={{ width: 0 }}
-                        animate={{ width: "100%" }}
-                        transition={{ duration: 0.5, delay: 0.7 }}
-                      >
-                        <motion.div
-                          style={{ width: `${getCurrentLevelProgress()}%` }}
-                          className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-amber-400 to-amber-600"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${getCurrentLevelProgress()}%` }}
-                          transition={{ duration: 1, delay: 0.8 }}
-                        />
-                      </motion.div>
-                    </div>
-                  </motion.div>
-
-                  {unlockedRecipes.length > 0 && (
-                    <motion.div
-                      className="mt-6"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.9 }}
-                    >
-                      <h3 className="font-bold text-amber-800 flex items-center gap-2 mb-3">
-                        <Trophy className="h-5 w-5 text-amber-600" />
-                        Receitas Desbloqueadas ({unlockedRecipes.length})
-                      </h3>
-
-                      <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-2 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                        {recipeCollections
-                          .filter((r) => r.id !== 1 && unlockedRecipes.includes(r.id))
-                          .map((recipe, index) => (
-                            <motion.div
-                              key={index}
-                              className="flex items-center justify-between bg-white p-2 rounded border border-amber-100"
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ duration: 0.3, delay: 1 + index * 0.1 }}
-                            >
-                              <span className="flex items-center">
-                                {renderIcon(recipe.icon)}
-                                <span className="ml-2 text-sm">{recipe.title}</span>
-                              </span>
-                              <Badge className="bg-green-100 text-green-800 text-xs">Desbloqueado</Badge>
-                            </motion.div>
-                          ))}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {getUnlockedBonuses().length > 0 && (
-                    <motion.div
-                      className="mt-4"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 1.1 }}
-                    >
-                      <h3 className="font-bold text-amber-800 flex items-center gap-2 mb-3">
-                        <Gift className="h-5 w-5 text-amber-600" />
-                        Dicas Desbloqueadas ({getUnlockedBonuses().length})
-                      </h3>
-
-                      <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-2 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                        {getUnlockedBonuses().map((bonus, index) => (
-                          <motion.div
-                            key={index}
-                            className="flex items-center justify-between bg-white p-2 rounded border border-amber-100"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.3, delay: 1.2 + index * 0.1 }}
-                          >
-                            <span className="flex items-center">
-                              {renderIcon(bonus.icon)}
-                              <span className="ml-2 text-sm">{bonus.title}</span>
-                            </span>
-                            <Badge className="bg-green-100 text-green-800 text-xs">Desbloqueado</Badge>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  <motion.div
-                    className="bg-green-50 p-4 rounded-lg border border-green-200 mt-6"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 1.3 }}
-                  >
-                    <h3 className="font-bold text-green-800 text-center mb-2">
-                      Continue jogando para desbloquear mais!
-                    </h3>
-                    <p className="text-sm text-green-700 text-center mb-3">
-                      Responda mais perguntas corretamente para subir de nível e desbloquear mais receitas e dicas
-                      exclusivas.
-                    </p>
-                    <div className="flex justify-center">
-                      <Badge className="bg-amber-100 text-amber-800 py-1">
-                        Próximo nível: {newLevel < levels.length ? levels[newLevel].name : "Nível Máximo"}
-                      </Badge>
-                    </div>
-                  </motion.div>
-                </CardContent>
-
-                <CardFooter className="flex gap-2 p-6 bg-gray-50 border-t">
-                  <motion.div
-                    className="w-full"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 1.4 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button
-                      onClick={() => setShowLevelUpModal(false)}
-                      className="w-full bg-green-600 hover:bg-green-700 text-lg py-6"
-                    >
-                      Desbloquear Mais
-                    </Button>
-                  </motion.div>
-                </CardFooter>
-              </Card>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {showCompletionModal && (
-          <motion.div
-            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <motion.div
-              className="max-w-xl w-full overflow-y-auto max-h-[90vh]"
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 20,
-                delay: 0.1,
-              }}
-              onAnimationStart={() => popupAudioRef.current?.play()}
-            >
-              <Card className="border-0 overflow-hidden shadow-2xl">
-                <motion.div
-                  className="bg-gradient-to-r from-amber-400 to-amber-600 text-white p-5"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4, delay: 0.2 }}
-                >
-                  <motion.div
-                    initial={{ y: -20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                  >
-                    <CardTitle className="text-3xl text-center">
-                      Parabéns, {levels[currentLevel - 1].name}! 🎉
-                    </CardTitle>
-                    <CardDescription className="text-center text-white/90 text-lg mt-1">
-                      Você completou o jogo com {xp} XP e desbloqueou {unlockedRecipes.length} receitas!
-                    </CardDescription>
-                  </motion.div>
-                </motion.div>
-
-                <CardContent className="space-y-4 p-6">
-                  <motion.div
-                    className="bg-amber-50 p-4 rounded-lg border-2 border-amber-300"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.4 }}
-                  >
-                    <h3 className="font-bold text-amber-800 flex items-center gap-2 text-lg">
-                      <Trophy className="h-6 w-6 text-amber-600" />
-                      Receitas Desbloqueadas: {unlockedRecipes.length}
-                    </h3>
-
-                    <motion.div
-                      className="mt-4 mb-4 bg-green-100 p-4 rounded-lg border-2 border-green-500 shadow-md"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 400,
-                        damping: 15,
-                        delay: 0.5,
-                      }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Bread className="h-7 w-7 text-amber-700 bg-amber-100 p-1 rounded-full mr-2" />
-                          <div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Bread className="h-7 w-7 text-amber-700 bg-amber-100 p-1 rounded-full mr-2" />
+                     <div>
                             <h4 className="font-bold text-lg">
                               300 Melhores Receitas de pães fofinhos que crescem muito! + Bônus
                             </h4>
